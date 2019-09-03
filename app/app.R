@@ -12,7 +12,7 @@ library(dplyr)
 library(RColorBrewer)
 
 # Working directory
-cd   = "/Users/lgoye/OneDrive/Documents/GitHub/Homework1"
+cd   = "/Users/lgoye/OneDrive/Documents/GitHub/hw1_lgoyenec"
 data = readRDS(paste0(cd,"/app/master_data.rds"))
 
 # User interface

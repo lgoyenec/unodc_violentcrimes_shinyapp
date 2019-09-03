@@ -1,5 +1,5 @@
 # Laura Goyeneche
-# August 30, 2018
+# Date: August 30, 2018
 # H1 R Shiny - data cleaning
 # -------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ library(tidyverse)
 library(readxl)
 
 # Working directory
-cd = "/Users/lgoye/OneDrive/Documents/GitHub/Homework1"
+cd = "/Users/lgoye/OneDrive/Documents/GitHub/hw1_lgoyenec"
 
 # Import each data
 # Add string variable with 'violent crime' names
