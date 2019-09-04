@@ -9,6 +9,7 @@ library(shinythemes)
 library(plotly)
 library(DT)
 library(dplyr)
+library(tidyr)
 library(RColorBrewer)
 
 # Working directory
@@ -40,7 +41,8 @@ ui = tagList(
                                  "Year",
                                  min = min(data$Year),
                                  max = max(data$Year),
-                                 value = max(data$Year))),
+                                 value = max(data$Year),
+                                 sep = "")),
                  mainPanel(
                      fluidRow(
                          column(12,
