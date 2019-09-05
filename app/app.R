@@ -6,6 +6,7 @@
 # Libraries
 library(shiny)
 library(shinythemes)
+library(shinyWidgets)
 library(plotly)
 library(DT)
 library(dplyr)
@@ -58,19 +59,21 @@ ui = tagList(
                                  sep = ""),
                      em(p(strong("Note:"),"Apply just for Tab 3", style = "font-size:11px"))),
                  mainPanel(
+                     fluidRow(useShinydashboard(),
+                              tags$head(tags$style(HTML(".small-box {height: 150px}"))),
+                              valueBoxOutput("vB1", width = 6),
+                              valueBoxOutput("vB2", width = 6)),
+                     br(),
                      fluidRow(
-                         column(12,
-                                h4("Gaugets")),
                          tabsetPanel(
                              tabPanel("Tab 1", plotlyOutput("plot1")),
                              tabPanel("Tab 2", plotlyOutput("plot2")),
-                             tabPanel("Tab 3", plotlyOutput("plot3"))
-                         )
+                             tabPanel("Tab 3", plotlyOutput("plot3"))) 
                      )
                  )
             ),
         tabPanel("Data explorer",
-                 h4(strong("Crimes and rate per 1.000.000 inhabitants")),
+                 h4(strong(paste("Crimes and rate per 100.000 inhabitants"))),
                  hr(),
                  DT::dataTableOutput("tab"),
                  hr(),
@@ -84,6 +87,39 @@ ui = tagList(
 # -------------------------------------------------------------------
 server = function(input, output) {
     
+    output$vB1 = renderValueBox({
+        # Total number (rate) of crimes for selected variable input1
+        data %>%
+            filter(Crimename == input$input1 & Year == input$input5) %>%
+            summarise(n = formatC(sum(Count), big.mark = ",", format = "d")) %>%
+            valueBox(.,
+                     p(strong(paste(input$input1,
+                                    "crimes in",
+                                    input$input5)),
+                       style = "font-size:15px"),
+                     icon = icon("exclamation-circle"),
+                     color = "teal")
+    })
+
+    output$vB2 = renderValueBox({
+        # Rate per 100,000 individuals
+        data %>%
+            filter(Crimename == input$input1 & Year == input$input5) %>%
+            group_by(Country) %>%
+            summarise(n = sum(Count)) %>%
+            arrange(-n) %>%
+            top_n(1) %>%
+            select(Country) %>%
+            valueBox(.,
+                     p(strong(paste("Corresponds to the country with most",
+                                   input$input1,
+                                    "crimes in",
+                                    input$input5)),
+                       style = "font-size:15px"),
+                     icon = icon("globe-americas"),
+                     color = )
+    })
+    
     output$plot1 = renderPlotly({
         temp = 
             data %>%
@@ -91,12 +127,27 @@ server = function(input, output) {
             group_by(Year) %>%
             summarise(n = sum(!!sym(input$input3)))
         
-        data %>% 
+        if(input$input2 %in% c("Subregion","Country")) {
+            NameSelect = 
+                data %>%
+                filter(Crimename == input$input1) %>%
+                group_by(!!sym(input$input2)) %>%
+                summarise(n = sum(Count)) %>%
+                arrange(-n) %>%
+                top_n(5) %>%
+                pull(!!sym(input$input2))
+            dataF = 
+                data %>% 
+                filter(!!sym(input$input2) %in% NameSelect)
+        } else {
+            dataF = data
+        }
+        
+        dataF %>% 
             filter(Crimename == input$input1) %>% 
             mutate(!!sym(input$input2) := factor(!!sym(input$input2), ordered = T)) %>%
             group_by(Year,!!sym(input$input2)) %>%
             summarise(n = sum(!!sym(input$input3))) %>%
-            top_n(3, n) %>%
             plot_ly(
                 ., 
                 type = "bar",
@@ -115,14 +166,31 @@ server = function(input, output) {
                 mode = "lines+markers",
                 inherit = F, 
                 showlegend = T,
-                name = HTML("Annual total of crimes/total rate <br>for all regions/subregions/countries <br>")
+                name = HTML(paste("Annual total of crimes (rate) <br>for all<b>",input$input2,"<b><br>"))
             ) %>%
-            layout(yaxis = list(title = input$input1),
-                   legend = list(font = list(size = 11)))
+            layout(yaxis = list(title = input$input1, range =~ c(0, max(n)*1.7)),
+                   legend = list(x = 0.01, y = 1, font = list(size = 10)))
     })
     
     output$plot2 = renderPlotly({
-        data %>%
+        if(input$input2 %in% c("Subregion","Country")){
+            NameSelect = 
+                data %>%
+                filter(Crimename %in% c(input$input1,input$input4)) %>%
+                group_by(!!sym(input$input2)) %>%
+                summarise(n = sum(Count)) %>%
+                arrange(-n) %>%
+                top_n(5) %>%
+                pull(!!sym(input$input2))
+            dataF = 
+                data %>% 
+                filter(!!sym(input$input2) %in% NameSelect)
+                
+        } else {
+            dataF = data
+        }
+            
+        dataF %>%
             spread(Crimename,!!sym(input$input3)) %>%
             mutate(!!sym(input$input2) := factor(!!sym(input$input2), ordered = T)) %>%
             group_by(Year,!!sym(input$input2)) %>%
@@ -134,7 +202,7 @@ server = function(input, output) {
                 type = "scatter",
                 mode = "markers",
                 color = .[[input$input2]],
-                marker = list(size =~ n3/quantile(n3,probs = 0.25), sizemode = "diameter")
+                marker = list(size = 10, sizemode = "diameter")
             ) %>%
             layout(xaxis = list(title = input$input1),
                    yaxis = list(title = input$input4)
@@ -157,7 +225,7 @@ server = function(input, output) {
                 arrange(-n) %>%
                 filter(as.numeric(row.names(temp)) <= 25) %>%
                 arrange(n) %>%
-                plot_ly(color = I("#1B4965"), size = I(8)) %>%
+                plot_ly(color = I("#1B4965"), size = I(8), height = 500) %>%
                 add_segments(x = 0, xend =~ n, y =~ category, yend =~ category, showlegend = F) %>%
                 add_markers(x =~ n, y =~ category, name = "", color = I("#FFC857"), size = 120) %>%
                 layout(xaxis = list(title = input$input1),
@@ -173,10 +241,7 @@ server = function(input, output) {
     })
     
     dataFilter = reactive({
-        data = 
-            data %>%
-            filter(Crimename == input$input1)
-            
+        data = data %>% filter(Crimename == input$input1)
     })
     
     output$tab = DT::renderDataTable({
@@ -194,3 +259,4 @@ server = function(input, output) {
 # Run app
 # -------------------------------------------------------------------
 shinyApp(ui = ui, server = server)
+# -------------------------------------------------------------------

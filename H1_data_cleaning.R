@@ -1,5 +1,5 @@
 # Laura Goyeneche
-# Date: August 30, 2018
+# August 30, 2018
 # H1 R Shiny - data cleaning
 # -------------------------------------------------------------------
 
@@ -26,11 +26,14 @@ for (i in varsName) {
 }
 
 # Modify labels in `crimename` column
+# Variable `year` as numeric
+# Calculate `rate`: different normalization per variable
 data = 
   data %>%
   mutate(crimename = gsub("_"," ",crimename),
          crimename = str_to_sentence(crimename),
-         year = as.numeric(year))
+         year = as.numeric(year),
+         rate = rate/100000)
 
 # Modify names of variable
 names(data) = str_to_sentence(gsub("_","",names(data)))
