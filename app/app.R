@@ -17,6 +17,10 @@ library(RColorBrewer)
 cd   = "/Users/lgoye/OneDrive/Documents/GitHub/hw1_lgoyenec"
 data = readRDS(paste0(cd,"/app/master_data.rds"))
 
+# Color Palette
+cP = c("#0D1B2A","#1B263B","#415A77","#778DA9","#E0E1DD")
+bP = rev(brewer.pal(5,"Blues"))
+    
 # User interface
 # -------------------------------------------------------------------
 ui = tagList(
@@ -32,7 +36,8 @@ ui = tagList(
                      em(p(strong("Note:"),
                           "Apply in all tabs, including",
                           strong("Data explorer"),
-                          "In Tab 2 corresponds to x-axis", 
+                          br(),
+                          "For Tab 2 corresponds to x-axis", 
                           style = "font-size:11px")),
                      br(),
                      radioButtons("input4",
@@ -154,15 +159,15 @@ server = function(input, output) {
                 x =~ Year,
                 y =~ n, 
                 color = .[[input$input2]], 
-                colors = rev(brewer.pal(length(unique(.[[input$input2]])),"Blues"))) %>%
+                colors = bP,
+                alpha = 0.7) %>%
             layout(barmode = "stack") %>% 
             add_trace(
                 data = temp,
                 x =~ Year, 
                 y =~ n,
-                color = I("#FF8C42"),
+                color = I("#CB3650"),
                 type = "scatter",
-                size = I(2),
                 mode = "lines+markers",
                 inherit = F, 
                 showlegend = T,
@@ -173,27 +178,12 @@ server = function(input, output) {
     })
     
     output$plot2 = renderPlotly({
-        if(input$input2 %in% c("Subregion","Country")){
-            NameSelect = 
-                data %>%
-                filter(Crimename %in% c(input$input1,input$input4)) %>%
-                group_by(!!sym(input$input2)) %>%
-                summarise(n = sum(Count)) %>%
-                arrange(-n) %>%
-                top_n(5) %>%
-                pull(!!sym(input$input2))
-            dataF = 
-                data %>% 
-                filter(!!sym(input$input2) %in% NameSelect)
-                
-        } else {
-            dataF = data
-        }
             
-        dataF %>%
+        data %>%
+            filter(Year == input$input5) %>%
             spread(Crimename,!!sym(input$input3)) %>%
             mutate(!!sym(input$input2) := factor(!!sym(input$input2), ordered = T)) %>%
-            group_by(Year,!!sym(input$input2)) %>%
+            group_by(!!sym(input$input2)) %>%
             summarise(n1 = sum(!!sym(input$input1), na.rm = T), n2 = sum(!!sym(input$input4), na.rm = T)) %>%
             mutate(n3 = n1 + n2) %>%
             plot_ly(
@@ -201,12 +191,13 @@ server = function(input, output) {
                 y =~ n2,
                 type = "scatter",
                 mode = "markers",
-                color = .[[input$input2]],
-                marker = list(size = 10, sizemode = "diameter")
-            ) %>%
+                color = I("#4ECDC4"), 
+                marker = list(size = 15, sizemode = "diameter"),
+                text = .[[input$input2]],
+                showlegend = F) %>%
+            #add_text(textfont = list(size = 9, color = "black"),textposition = "top right") %>%
             layout(xaxis = list(title = input$input1),
-                   yaxis = list(title = input$input4)
-            )
+                   yaxis = list(title = input$input4))
     })
     
     output$plot3 = renderPlotly({
