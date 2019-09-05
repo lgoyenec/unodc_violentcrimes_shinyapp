@@ -71,20 +71,36 @@ ui = tagList(
                      br(),
                      fluidRow(
                          tabsetPanel(
-                             tabPanel("Tab 1", plotlyOutput("plot1")),
-                             tabPanel("Tab 2", plotlyOutput("plot2")),
-                             tabPanel("Tab 3", plotlyOutput("plot3"))) 
+                             tabPanel("Tab 1", 
+                                      h5(strong("Annual crimes (rate per 100.000) for Top 5*"), align = "center"),
+                                      plotlyOutput("plot1"), br(),
+                                      p(em(strong("*Note:"),
+                                           "Based on the total number of selected crime over time per"), 
+                                        style = "font-size:11px")),
+                             tabPanel("Tab 2", 
+                                      h5(strong("Annual crimes (rate per 100.000) for Top 5"), align = "center"),
+                                      plotlyOutput("plot2"), br(),
+                                      p(em(strong("*Note:"),
+                                           "Based on the total number of selected crimes over time"),
+                                        style = "font-size:11px")),
+                             tabPanel("Tab 3", 
+                                      h5(strong("Frequency for geographical category"), align = "center"),
+                                      plotlyOutput("plot3"))) 
                      )
                  )
             ),
         tabPanel("Data explorer",
-                 h4(strong(paste("Crimes and rate per 100.000 inhabitants"))),
+                 h5(strong(paste("Crimes and rate per 100.000 inhabitants"))),
                  hr(),
                  DT::dataTableOutput("tab"),
                  hr(),
                  h5(strong("Download data for selected variable:")),
                  downloadButton('downloadData',"Download data")),
-        tabPanel("More")
+        tabPanel("More",
+                 h4("Data source:"),
+                 p("UNODC"),
+                 h6("Author:"),
+                 p("Laura Goyeneche"))
     )
 )
 
@@ -116,10 +132,8 @@ server = function(input, output) {
             top_n(1) %>%
             select(Country) %>%
             valueBox(.,
-                     p(strong(paste("Corresponds to the country with most",
-                                   input$input1,
-                                    "crimes in",
-                                    input$input5)),
+                     p(strong(
+                         paste("Corresponds to the country with most",input$input1,"crimes in",input$input5)),
                        style = "font-size:15px"),
                      icon = icon("globe-americas"),
                      color = )
