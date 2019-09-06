@@ -26,10 +26,16 @@ bP = rev(brewer.pal(5,"Blues"))
 ui = tagList(
     navbarPage(
         theme = shinytheme("cerulean"),
-        title = strong("UNODC Violent Crimes"),
+        title = strong(HTML("<a href=https://dataunodc.un.org/><font color=white>UNODC Violent Crime</font></a>")),
         tabPanel("Trends",
                  sidebarPanel(
                      width = 3, 
+                     p(strong("Laura Goyeneche"),br(),
+                       em("MSPPM-Data Analytics '20", style = "font-size:11px"),br(),
+                       em("Carnegie Mellon University", style = "font-size:11px"),br(),
+                       strong(em("lgoyenec@andrew.cmu.edu", style = "fotn-size:8px")),
+                       style = "font-size:12px"),
+                     hr(),
                      radioButtons("input1",
                                   "Select Crime Type:",
                                   choices = unique(data$Crimename)),
@@ -39,23 +45,19 @@ ui = tagList(
                           br(),
                           "For Tab 2 corresponds to x-axis", 
                           style = "font-size:11px")),
-                     br(),
                      radioButtons("input4",
                                   "Select Crime Type:",
                                   choices = unique(data$Crimename),
                                   selected = "Robbery"),
                      em(p(strong("Note:"),"Apply just for Tab 2 and corresponds to y-axis", style = "font-size:11px")),
-                     br(),
                      radioButtons("input2",
                                   "Select geographical category:",
                                   choices = names(data)[1:3]),
                      em(p(strong("Note:"),"Apply in all tabs", style = "font-size:11px")),
-                     br(),
                      radioButtons("input3",
                                   "Select indicator:",
                                   choices = c("Count","Rate")),
                      em(p(strong("Note:"),"Apply in all tabs", style = "font-size:11px")),
-                     br(),
                      sliderInput("input5",
                                  "Year",
                                  min = min(data$Year),
@@ -84,7 +86,7 @@ ui = tagList(
                                            "Based on the total number of selected crimes over time"),
                                         style = "font-size:11px")),
                              tabPanel("Tab 3", 
-                                      h5(strong("Frequency for geographical category"), align = "center"),
+                                      h5(strong("Frequency by geographical category"), align = "center"),
                                       plotlyOutput("plot3"))) 
                      )
                  )
@@ -95,12 +97,7 @@ ui = tagList(
                  DT::dataTableOutput("tab"),
                  hr(),
                  h5(strong("Download data for selected variable:")),
-                 downloadButton('downloadData',"Download data")),
-        tabPanel("More",
-                 h4("Data source:"),
-                 p("UNODC"),
-                 h6("Author:"),
-                 p("Laura Goyeneche"))
+                 downloadButton('downloadData',"Download data"))
     )
 )
 
@@ -108,8 +105,9 @@ ui = tagList(
 # -------------------------------------------------------------------
 server = function(input, output) {
     
+    # Total number (rate) of crimes for selected variable input1
+    # ---------------------------------------------------------------
     output$vB1 = renderValueBox({
-        # Total number (rate) of crimes for selected variable input1
         data %>%
             filter(Crimename == input$input1 & Year == input$input5) %>%
             summarise(n = formatC(sum(Count), big.mark = ",", format = "d")) %>%
@@ -122,8 +120,9 @@ server = function(input, output) {
                      color = "teal")
     })
 
+    # Rate per 100,000 individuals
+    # ---------------------------------------------------------------    
     output$vB2 = renderValueBox({
-        # Rate per 100,000 individuals
         data %>%
             filter(Crimename == input$input1 & Year == input$input5) %>%
             group_by(Country) %>%
@@ -139,7 +138,9 @@ server = function(input, output) {
                      color = )
     })
     
-    output$plot1 = renderPlotly({
+    # Tab 1: Annual total crimes (rate) for Top 5 region/subregion/country
+    # ---------------------------------------------------------------
+    observe({
         temp = 
             data %>%
             filter(Crimename == input$input1) %>% 
@@ -162,35 +163,40 @@ server = function(input, output) {
             dataF = data
         }
         
-        dataF %>% 
-            filter(Crimename == input$input1) %>% 
-            mutate(!!sym(input$input2) := factor(!!sym(input$input2), ordered = T)) %>%
-            group_by(Year,!!sym(input$input2)) %>%
-            summarise(n = sum(!!sym(input$input3))) %>%
-            plot_ly(
-                ., 
-                type = "bar",
-                x =~ Year,
-                y =~ n, 
-                color = .[[input$input2]], 
-                colors = bP,
-                alpha = 0.7) %>%
-            layout(barmode = "stack") %>% 
-            add_trace(
-                data = temp,
-                x =~ Year, 
-                y =~ n,
-                color = I("#CB3650"),
-                type = "scatter",
-                mode = "lines+markers",
-                inherit = F, 
-                showlegend = T,
-                name = HTML(paste("Annual total of crimes (rate) <br>for all<b>",input$input2,"<b><br>"))
-            ) %>%
-            layout(yaxis = list(title = input$input1, range =~ c(0, max(n)*1.7)),
-                   legend = list(x = 0.01, y = 1, font = list(size = 10)))
+        output$plot1 = renderPlotly({
+            dataF %>% 
+                filter(Crimename == input$input1) %>% 
+                mutate(!!sym(input$input2) := factor(!!sym(input$input2), ordered = T)) %>%
+                group_by(Year,!!sym(input$input2)) %>%
+                summarise(n = sum(!!sym(input$input3))) %>%
+                plot_ly(
+                    ., 
+                    type = "bar",
+                    x =~ Year,
+                    y =~ n, 
+                    color = .[[input$input2]], 
+                    colors = bP,
+                    alpha = 0.7) %>%
+                layout(barmode = "stack") %>% 
+                add_trace(
+                    data = temp,
+                    x =~ Year, 
+                    y =~ n,
+                    color = I("#CB3650"),
+                    type = "scatter",
+                    mode = "lines+markers",
+                    inherit = F, 
+                    showlegend = T,
+                    name = HTML(paste("Annual total of crimes (rate) <br>for all<b>",input$input2,"<b><br>"))
+                ) %>%
+                layout(yaxis = list(title = input$input1, range =~ c(0, max(n)*1.7)),
+                       legend = list(x = 0.01, y = 1, font = list(size = 10)))
+        })
     })
     
+    # Tab 2: Annual total crimes (rate) for Top 5 region/subregion/country
+    #        comparing 2 types of crimes
+    # ---------------------------------------------------------------
     output$plot2 = renderPlotly({
             
         data %>%
@@ -214,6 +220,8 @@ server = function(input, output) {
                    yaxis = list(title = input$input4))
     })
     
+    # Tab 3: Frequency by geographical category
+    # ---------------------------------------------------------------
     output$plot3 = renderPlotly({
         
         temp = 
@@ -244,17 +252,23 @@ server = function(input, output) {
                        yaxis = list(title = ""))
         }
     })
-    
+
+    # Tab - Data Explorer: Data subset
+    # ---------------------------------------------------------------
     dataFilter = reactive({
         data = data %>% filter(Crimename == input$input1)
     })
     
+    # Tab - Data Explorer: Data table
+    # ---------------------------------------------------------------
     output$tab = DT::renderDataTable({
         DT::datatable(dataFilter(),
                       options = list(pageLength = 10), 
                       rownames = F)
     })
     
+    # Tab - Data Explorer: Download
+    # ---------------------------------------------------------------
     output$downloadData = downloadHandler(
         filename = function() {paste("data-", Sys.Date(), ".csv", sep = "")},
         content = function(file) {write.csv(dataFilter(),file)}
