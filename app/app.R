@@ -6,6 +6,7 @@
 # Libraries
 library(shiny)
 library(shinythemes)
+library(shinydashboard)
 library(shinyWidgets)
 library(plotly)
 library(DT)
@@ -14,8 +15,7 @@ library(tidyr)
 library(RColorBrewer)
 
 # Working directory
-cd   = "/Users/lgoye/OneDrive/Documents/GitHub/hw1_lgoyenec"
-data = readRDS(paste0(cd,"/app/master_data.rds"))
+data = readRDS("master_data.rds")
 
 # Color Palette
 cP = c("#0D1B2A","#1B263B","#415A77","#778DA9","#E0E1DD")
@@ -33,7 +33,10 @@ ui = tagList(
                      p(strong("Laura Goyeneche"),br(),
                        em("MSPPM-Data Analytics '20", style = "font-size:11px"),br(),
                        em("Carnegie Mellon University", style = "font-size:11px"),br(),
-                       strong(em("lgoyenec@andrew.cmu.edu", style = "fotn-size:8px")),
+                       strong(em("lgoyenec@andrew.cmu.edu", style = "font-size:10px")),br(),
+                       a("https://github.com/lgoyenec/hw1_lgoyenec", 
+                         href = "https://github.com/lgoyenec/hw1_lgoyenec",
+                         style = "font-size:10px"),
                        style = "font-size:12px"),
                      hr(),
                      radioButtons("input1",
@@ -97,7 +100,8 @@ ui = tagList(
                  DT::dataTableOutput("tab"),
                  hr(),
                  h5(strong("Download data for selected variable:")),
-                 downloadButton('downloadData',"Download data"))
+                 downloadButton('downloadData',"Download data"), 
+                 hr())
     )
 )
 
